@@ -1,3 +1,4 @@
+import java.awt.BorderLayout;
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.DataInputStream;
@@ -6,8 +7,11 @@ import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.MalformedURLException;
 import java.net.URL;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
 
 public class start {
 	
@@ -16,28 +20,42 @@ public class start {
 	public static String[] ServVerLine = new String[3];
 	public static String[] ClientVerLine = new String[3];
 	public static String[] ProfileLine = new String[100];
-	public static File RpgDir = new File (System.getProperty("user.home") + "\\AppData\\Roaming\\.minecraft\\versions\\LegendRpg");
-    public static File ModDir = new File (System.getProperty("user.home") + "\\AppData\\Roaming\\.minecraft\\mods");  
+	public static File mcDir = new File (System.getProperty("user.home") + "\\AppData\\Roaming\\.minecraft\\minecraft.jar");
+	public static File mcForDir = new File (System.getProperty("user.home") + "\\AppData\\Roaming\\.minecraft\\libraries\\net\\minecraftforge\\minecraftforge\\9.10.0.829\\minecraftforge-9.10.0.829.jar");
+	public static File rpgDir = new File (System.getProperty("user.home") + "\\AppData\\Roaming\\.minecraft\\versions\\LegendRpg");
     public static File jarDir = new File (System.getProperty("user.home") + "\\AppData\\Roaming\\.minecraft\\versions\\LegendRpg\\LegendRpg.jar");
     public static File jsonDir = new File (System.getProperty("user.home") + "\\AppData\\Roaming\\.minecraft\\versions\\LegendRpg\\LegendRpg.json");
     public static File verDir = new File (System.getProperty("user.home") + "\\AppData\\Roaming\\.minecraft\\versions\\LegendRpg\\LegendRpgVer.txt");
-    public static File modDir;
-    public static URL jarUrl, jsonUrl, modUrl;
+    public static File modDir = new File (System.getProperty("user.home") + "\\AppData\\Roaming\\.minecraft\\mods\\LegendRPG.jar");
+    public static URL jarUrl, jsonUrl, modUrl, mcUrl, mcForUrl;
+    public static JFrame guiFrame = new JFrame();
+    public static JPanel guiPanel = new JPanel();
+    public static JLabel sytOut = new JLabel("");
     
 	public static void main(String[] args) throws IOException {
 		
+		guiFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        guiFrame.setTitle("LegendRPG");
+        guiFrame.setSize(250,100);
+        guiFrame.setLocationRelativeTo(null);
+        guiFrame.add(sytOut,BorderLayout.CENTER);
+        
 		URL temp = new URL("http://emoagaming.playat.ch/Builds/Forge/LegendRpg.jar");
 		jarUrl = temp;
 		temp = new URL("http://emoagaming.playat.ch/Builds/Forge/LegendRpg.json");
 		jsonUrl = temp;
+		temp = new URL("http://emoagaming.playat.ch/Builds/Forge/minecraftforge-9.10.0.829.jar");
+		mcForUrl = temp;
+		temp = new URL("https://s3.amazonaws.com/Minecraft.Download/launcher/Minecraft.jar");
+		mcUrl = temp;
 	    
 		getServerVersion();
 		System.out.println("ServMcVer = " + ServMcVer);
 		System.out.println("ServRpgVer = " + ServRpgVer);
-		modDir = new File (System.getProperty("user.home") + "\\AppData\\Roaming\\.minecraft\\mods\\LegendRPG.jar");
 		modUrl = new URL("http://emoagaming.playat.ch/Builds/LegendRPG/LegendRPG-" + ServMcVer + "." + (ServRpgVer - 1) + ".jar");
 		
-		if (!RpgDir.exists()){
+		if (!rpgDir.exists()){
+			guiFrame.setVisible(true);
 			firstStart();
 		}
 		
@@ -45,8 +63,21 @@ public class start {
 		System.out.println("ClientMcVer = " + ClientMcVer);
 		System.out.println("ClientRpgVer = " + ClientRpgVer);
 		
-		updateClient();
-		System.exit(0);
+		if (ClientMcVer.equals(ServMcVer)){
+			if (ClientRpgVer < ServRpgVer){
+				if (JOptionPane.showConfirmDialog(null, "Update avalible \nDo you wish to update?", "Request", 
+				    JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION)
+				{
+					guiFrame.setVisible(true);
+					updateClient();
+				}
+			}
+        }
+		
+		try {
+			Runtime.getRuntime().exec("cmd /c start "+mcDir);
+			System.exit(0);
+		} catch (IOException e) {}
 	}
 	
 	public static void firstStart() throws IOException {
@@ -54,17 +85,28 @@ public class start {
 		File ProfileDir = new File (System.getProperty("user.home") + "\\AppData\\Roaming\\.minecraft\\launcher_profiles.json");
 		int j = 0;
 		
+		System.out.println("Downloading Minecraft.jar");
+		sytOut.setText("Downloading Minecraft.jar");
+		org.apache.commons.io.FileUtils.copyURLToFile(mcUrl, mcDir);
+		System.out.println("Downloading MinecraftForge.jar");
+		sytOut.setText("Downloading MinecraftForge.jar");
+		org.apache.commons.io.FileUtils.copyURLToFile(mcForUrl, mcForDir);
 		System.out.println("Making LegendRpg Version Directory");
-		RpgDir.mkdir();
+		sytOut.setText("Making LegendRpg Version Directory");
+		rpgDir.mkdir();
 		System.out.println("Downloading LegendRpg Version Jar");
+		sytOut.setText("Downloading LegendRpg Version Jar");
 		org.apache.commons.io.FileUtils.copyURLToFile(jarUrl, jarDir);
 		System.out.println("Downloading LegendRpg Version Json");
+		sytOut.setText("Downloading LegendRpg Version Json");
 		org.apache.commons.io.FileUtils.copyURLToFile(jsonUrl, jsonDir);
 		System.out.println("Downloading LegendRpg Mod");
+		sytOut.setText("Downloading LegendRpg Mod");
 		org.apache.commons.io.FileUtils.copyURLToFile(modUrl, modDir);
 
 		try {
 			System.out.println("Creating Client Version");
+			sytOut.setText("Creating Client Version");
 	        BufferedWriter out = new BufferedWriter(new FileWriter(verDir));
 	        for (int i = 0; i <= 2 ; i++) {
 	            out.write(ServVerLine[i]);
@@ -73,6 +115,7 @@ public class start {
 	        out.close();
 	        
 	        System.out.println("Adding LegendRpg Profile");
+	        sytOut.setText("Adding LegendRpg Profile");
 	        FileInputStream fstream = new FileInputStream(ProfileDir);
 		    DataInputStream in = new DataInputStream(fstream);
 			BufferedReader br = new BufferedReader(new InputStreamReader(in));
@@ -116,25 +159,26 @@ public class start {
 	}
 	
 	public static void updateClient() throws IOException {
-		if (ClientMcVer.equals(ServMcVer)){
-			if (ClientRpgVer < ServRpgVer){
 				
 				System.out.println("Updating LegendRpg Version Jar");
+				sytOut.setText("Updating LegendRpg Version Jar");
 				org.apache.commons.io.FileUtils.copyURLToFile(jarUrl, jarDir);
 				System.out.println("Updating LegendRpg Version Json");
+				sytOut.setText("Updating LegendRpg Version Json");
 				org.apache.commons.io.FileUtils.copyURLToFile(jsonUrl, jsonDir);
 				System.out.println("Updating LegendRpg Mod");
+				sytOut.setText("Updating LegendRpg Mod");
 				org.apache.commons.io.FileUtils.copyURLToFile(modUrl, modDir);
 				
 				System.out.println("Updating Client Version");
+				sytOut.setText("Updating Client Version");
 				BufferedWriter out = new BufferedWriter(new FileWriter(verDir));
 		        for (int i = 0; i <= 2 ; i++) {
 		            out.write(ServVerLine[i]);
 		            out.newLine();
 		        }
 		        out.close();
-			}
-		}
+		        sytOut.setVisible(false);
 	}
 	
 	public static void getClientVersion() throws IOException {
